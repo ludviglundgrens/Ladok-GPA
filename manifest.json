@@ -1,0 +1,16 @@
+{
+    "name": "GPA Calculator - Ladok",
+    "action": {},
+    "manifest_version": 3,
+    "version": "0.1",
+    "description": "Calculates GPA on all finnished courses",
+    "permissions": [
+      "activeTab",
+      "scripting"
+    ],
+    
+    "content_scripts": [{
+      "matches": ["https://www.student.ladok.se/student/app/studentwebb/min-utbildning/avklarade"],
+      "js": ["background.js"]
+    }]
+  }
