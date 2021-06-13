@@ -1,5 +1,14 @@
 async function get_gpa() { 
     console.log("calculating GPA")
+    
+    //inject waiting text 
+    var par = document.createElement("p");
+    var text = document.createTextNode("Calculating GPA...");
+    par.appendChild(text);
+
+    div = document.getElementsByClassName("row")[0]
+    div.appendChild(par, div)
+
     function xmlToJson(xml) {
         // Create the return object
         var obj = {};
@@ -54,12 +63,6 @@ async function get_gpa() {
     parser = new DOMParser();
     dom = parser.parseFromString(text, "application/xml")
     obj = xmlToJson(dom)
-    
-    /*
-    pathlist = obj["sd:TillfallesdeltagandeLista"]["sd:Tillfallesdeltaganden"]["sd:Tillfallesdeltagande"].map((data) =>{
-        return data["base:Uid"] 
-    })
-    */
 
     pathlist = document.querySelectorAll("a.card-link.stretched-link")
     pathlist2 = []
@@ -72,15 +75,6 @@ async function get_gpa() {
 
     str1 = "https://www.student.ladok.se/student/proxy/resultat/studentenskurser/egenkursinformation/student/"
     str2 =  "/kursUID/"
-
-    /*
-    pathlist2 = []
-    for (let index = 0; index < pathlist.length; index++) {
-        path = pathlist[index];
-        path = path["#text"]
-        pathlist2.push(path)
-    }
-    */
     
     pathlist = await pathlist2.map((path)=>{
         return str1.concat(uid, str2, path)  
@@ -139,13 +133,28 @@ async function get_gpa() {
     gpa = sum_val/sum_hp
     gpa = Number.parseFloat(gpa).toPrecision(4)
 
-    //Inject to site
-    var par = document.createElement("p");
-    var text = document.createTextNode("gpa: "+gpa);
-    par.appendChild(text);
-
+    //Inject gpa to site
     div = document.getElementsByClassName("row")[0]
-    div.appendChild(par, div);
-}  
-window.addEventListener("load", () => setTimeout(get_gpa, 700))
+    div.removeChild(div.lastChild);
+
+    var par = document.createElement("p");
+    var text = document.createTextNode("GPA: "+gpa);
+    par.appendChild(text);
+    div.appendChild(par, div)
+} 
+
+// setup for autoreload
+gpa_render=false
+setInterval(() => {
+    url = window.location.href
+    if (url === "https://www.student.ladok.se/student/app/studentwebb/min-utbildning/avklarade"){
+        if (gpa_render == false){
+            setTimeout(get_gpa, 1000)
+            gpa_render = true
+            console.log("correct url")
+        }
+    } else {
+        console.log("wrong url")
+    }
+},1000);
 

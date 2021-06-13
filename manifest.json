@@ -10,7 +10,7 @@
     ],
     
     "content_scripts": [{
-      "matches": ["https://www.student.ladok.se/student/app/studentwebb/min-utbildning/avklarade"],
+      "matches": ["https://www.student.ladok.se/*"],
       "js": ["background.js"]
     }]
   }
