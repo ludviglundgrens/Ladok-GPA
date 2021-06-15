@@ -49,50 +49,51 @@ async function get_gpa() {
     //get studentID
     res = await fetch("https://www.student.ladok.se/student/ladok/L3")
     text = await res.text()
-
     arr = await text.split("studentUID")
     uid = await arr[1]
     uid = await uid.split('\"')
     uid = await uid[1]
 
     // get courseID
-    link = "https://www.student.ladok.se/student/proxy/studiedeltagande/tillfallesdeltagande/kurstillfallesdeltagande/student/"
-    link = link.concat(uid)
-    res = await fetch(link)
+    url = "https://www.student.ladok.se/student/proxy/studiedeltagande/tillfallesdeltagande/kurstillfallesdeltagande/student/"
+    url = url.concat(uid)
+    res = await fetch(url)
     text = await res.text()
     parser = new DOMParser();
     dom = parser.parseFromString(text, "application/xml")
     obj = xmlToJson(dom)
 
-    pathlist = document.querySelectorAll("a.card-link.stretched-link")
-    pathlist2 = []
-    for (let index = 0; index < pathlist.length; index++) {
-        path = pathlist[index].href;
-        path = path.split("kurs/")
-        path = path[1]
-        pathlist2.push(path)
-    }
+    obj = obj["sd:TillfallesdeltagandeLista"]["sd:Tillfallesdeltaganden"]["sd:Tillfallesdeltagande"]
+
+    pathlist = []
+    obj.map((data)=>{
+        pathlist.push((data["sd:Utbildningsinformation"]["sd:UtbildningUID"]["#text"]))
+    })
 
     str1 = "https://www.student.ladok.se/student/proxy/resultat/studentenskurser/egenkursinformation/student/"
     str2 =  "/kursUID/"
     
-    pathlist = await pathlist2.map((path)=>{
+    pathlist = await pathlist.map((path)=>{
         return str1.concat(uid, str2, path)  
     })
     
     df = []
     for (let index = 0; index < pathlist.length; index++) {
-        res = await fetch(pathlist[index])
-        text = await res.text()
+        try {
+            res = await fetch(pathlist[index])
+            text = await res.text()
 
-        parser = new DOMParser();
-        dom = parser.parseFromString(text, "application/xml")
-        obj = xmlToJson(dom)
+            parser = new DOMParser();
+            dom = parser.parseFromString(text, "application/xml")
+            obj = xmlToJson(dom)
 
-        grade = obj["rr:StudentensKurserKurs"]["rr:Kursversioner"]["rr:VersionensKurs"]["rr:ResultatPaUtbildning"]["rr:SenastAttesteradeResultat"]["rr:Betygsgradsobjekt"]["base:Kod"]["#text"]
-        hp = obj["rr:StudentensKurserKurs"]["rr:Kursversioner"]["rr:VersionensKurs"]["rr:Omfattning"]["#text"]
-        
-        df.push([grade, hp])
+            grade = obj["rr:StudentensKurserKurs"]["rr:Kursversioner"]["rr:VersionensKurs"]["rr:ResultatPaUtbildning"]["rr:SenastAttesteradeResultat"]["rr:Betygsgradsobjekt"]["base:Kod"]["#text"]
+            hp = obj["rr:StudentensKurserKurs"]["rr:Kursversioner"]["rr:VersionensKurs"]["rr:Omfattning"]["#text"]
+            
+            df.push([grade, hp])
+        } catch (error) {
+            console.log(error)
+        }
     }   
 
     sum_hp = 0
@@ -146,6 +147,13 @@ async function get_gpa() {
 // setup for autoreload
 gpa_render=false
 setInterval(() => {
+
+    if (gpa_render == false){
+        setTimeout(get_gpa, 100)
+        gpa_render = true
+    }
+
+    /*
     url = window.location.href
     if (url === "https://www.student.ladok.se/student/app/studentwebb/min-utbildning/avklarade"){
         if (gpa_render == false){
@@ -155,6 +163,7 @@ setInterval(() => {
         }
     } else {
         console.log("wrong url")
-    }
+    }*/
+
 },1000);
 
