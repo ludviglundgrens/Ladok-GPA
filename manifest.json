@@ -3,9 +3,8 @@
     "action": {},
     "manifest_version": 3,
     "version": "0.1",
-    "description": "Calculates GPA on all finnished courses",
+    "description": "Calculates average GPA, weighted by course-credit, on the website www.student.ladok.se",
     "permissions": [
-      "activeTab",
       "scripting"
     ],
     

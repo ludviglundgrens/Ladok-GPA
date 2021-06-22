@@ -26,7 +26,7 @@ async function get_gpa() {
             obj = xml.nodeValue;
         }
     
-        // do children
+        // create children
         if (xml.hasChildNodes()) {
             for(var i = 0; i < xml.childNodes.length; i++) {
                 var item = xml.childNodes.item(i);
@@ -54,6 +54,12 @@ async function get_gpa() {
     uid = await uid.split('\"')
     uid = await uid[1]
 
+    // get schoolm
+    school = await text.split("larosateSv =")
+    school = await school[1]
+    school = school.split(";")
+    school = school[0]
+
     // get courseID
     url = "https://www.student.ladok.se/student/proxy/studiedeltagande/tillfallesdeltagande/kurstillfallesdeltagande/student/"
     url = url.concat(uid)
@@ -65,6 +71,7 @@ async function get_gpa() {
 
     obj = obj["sd:TillfallesdeltagandeLista"]["sd:Tillfallesdeltaganden"]["sd:Tillfallesdeltagande"]
 
+    
     pathlist = []
     obj.map((data)=>{
         pathlist.push((data["sd:Utbildningsinformation"]["sd:UtbildningUID"]["#text"]))
@@ -93,12 +100,14 @@ async function get_gpa() {
             df.push([grade, hp])
         } catch (error) {
             console.log(error)
+            console.log(pathlist[index])
         }
     }   
 
     sum_hp = 0
     sum_val = 0
 
+    // Calculate GPA (ECTS)
     df.map(data =>{
         grade = data[0]
         hp = data[1]
@@ -134,13 +143,58 @@ async function get_gpa() {
     gpa = sum_val/sum_hp
     gpa = Number.parseFloat(gpa).toPrecision(4)
 
-    //Inject gpa to site
+    //Inject GPA (ECTS) to element
     div = document.getElementsByClassName("row")[0]
     div.removeChild(div.lastChild);
 
     var par = document.createElement("p");
-    var text = document.createTextNode("GPA: "+gpa);
+    var text = document.createTextNode("GPA (ECTS): "+gpa);
     par.appendChild(text);
+
+    // KTH Exchange score
+    if (school.includes("Kungliga Tekniska högskolan")){
+        df.map(data =>{
+            grade = data[0]
+            hp = data[1]
+
+            if(grade === "A"){
+                grade = 5
+            }
+            if(grade === "B"){
+                grade = 4.5
+            }
+            if(grade === "C"){
+                grade = 4
+            }
+            if(grade === "D"){
+                grade = 3.5
+            }
+            if(grade === "E"){
+                grade = 3
+            } 
+            if(grade === "P") {
+                grade = 0
+                sum_hp = sum_hp - Number(hp)
+                sum_val = sum_val - Number(grade)*Number(hp)
+            }
+            if(grade === "F") {
+                grade = 0
+            }
+            if(grade === "FX") {
+                grade = 0
+            }
+            sum_hp = sum_hp + Number(hp)
+            sum_val = sum_val + Number(grade)*Number(hp)
+        })
+        kth = sum_val/sum_hp
+        kth = Number.parseFloat(kth).toPrecision(4)
+        
+        //Inject KTH Exchange score to element
+        par.appendChild(document.createElement('br'))
+        var text = document.createTextNode("KTH Exchange: "+kth);
+        par.appendChild(text);
+    }
+    // Append element to div
     div.appendChild(par, div)
 } 
 
@@ -152,18 +206,5 @@ setInterval(() => {
         setTimeout(get_gpa, 100)
         gpa_render = true
     }
-
-    /*
-    url = window.location.href
-    if (url === "https://www.student.ladok.se/student/app/studentwebb/min-utbildning/avklarade"){
-        if (gpa_render == false){
-            setTimeout(get_gpa, 1000)
-            gpa_render = true
-            console.log("correct url")
-        }
-    } else {
-        console.log("wrong url")
-    }*/
-
 },1000);
 
